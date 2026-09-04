@@ -38,10 +38,9 @@ try {
     $jpackage = Join-Path (Split-Path (Get-Command javac).Source) "jpackage.exe"
     if (-not (Test-Path $jpackage)) { throw "jpackage no esta en el JDK ($jpackage)" }
 
-    # --win-console a proposito: el emparejamiento (--emparejar CODIGO) imprime
-    # instrucciones y errores por consola, y sin ella el operador quedaria a
-    # ciegas. Ademas, ver la ventana abierta es la forma mas simple de saber que
-    # el agente esta vivo.
+    # SIN --win-console: el agente ya no necesita consola. Si no esta vinculado
+    # abre su ventana, y mientras corre vive en el icono de la bandeja. Una
+    # consola negra abierta todo el dia en el mostrador solo asusta.
     Write-Host "`n== 3/4 Generando la aplicacion ==" -ForegroundColor Cyan
     & $jpackage `
         --type app-image `
@@ -51,12 +50,9 @@ try {
         --main-jar (Split-Path $jar -Leaf) `
         --main-class py.com.vetcontrol.agente.AgenteMain `
         --dest $dist `
-        --win-console `
         --vendor "VetControl" `
         --description "Agente de impresion de tickets de VetControl"
     if ($LASTEXITCODE -ne 0) { throw "jpackage fallo (exit $LASTEXITCODE)" }
-
-    Copy-Item "$raiz\instalar-inicio-automatico.ps1" "$dist\$nombre\" -ErrorAction SilentlyContinue
 
     Write-Host "`n== 4/4 Comprimiendo ==" -ForegroundColor Cyan
     $zip = "$dist\$nombre-$version.zip"
@@ -77,7 +73,7 @@ try {
                 --main-jar (Split-Path $jar -Leaf) `
                 --main-class py.com.vetcontrol.agente.AgenteMain `
                 --dest $dist `
-                --win-console --win-dir-chooser --win-menu `
+                --win-dir-chooser --win-menu `
                 --vendor "VetControl"
         }
     }

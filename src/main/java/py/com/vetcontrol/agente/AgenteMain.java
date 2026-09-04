@@ -69,14 +69,10 @@ public final class AgenteMain {
             return;
         }
 
-        if (!config.estaEmparejado()) {
-            System.err.println("""
-                Este equipo todavia no esta vinculado a un puesto de impresion.
-
-                1) En VetControl: Configuraciones > Impresion > Puestos de impresion > Agregar puesto.
-                2) Copia el codigo que aparece en pantalla (vence en 10 minutos).
-                3) Volve a ejecutar:  vetcontrol-agente --emparejar CODIGO
-                """);
+        // Sin vincular se abre la ventana en vez de tirar instrucciones por consola: quien atiende
+        // un mostrador no va a abrir una terminal para tipear un codigo.
+        if (!config.estaEmparejado()
+            && !new Vinculador(config, bitacora).vincularConVentana()) {
             System.exit(2);
             return;
         }
@@ -122,8 +118,19 @@ public final class AgenteMain {
     private void correr() {
         bitacora.info("Agente " + VERSION + " iniciado. Puesto='" + config.puestoNombre()
             + "' api=" + config.baseUrl() + (dryRun ? " [DRY-RUN]" : ""));
+
+        // Sin icono el agente seria un proceso invisible: nadie sabria si esta vivo ni podria
+        // cerrarlo sin el Administrador de tareas.
+        IconoBandeja bandeja = new IconoBandeja();
+        bandeja.instalar(config.puestoNombre(), () -> {
+            bitacora.info("Cerrado desde el icono de la bandeja.");
+            bandeja.quitar();
+            System.exit(0);
+        }, AgenteConfig.directorioDatos().resolve("agente.log"));
+
         reportarImpresoras();
 
+        final IconoBandeja iconoActivo = bandeja;
         Backoff backoff = new Backoff();
         int ciclosVacios = 0;
 
@@ -141,11 +148,13 @@ public final class AgenteMain {
             } catch (ApiException ex) {
                 if (ex.tokenRechazado()) {
                     bitacora.error("La API rechazo el token de este puesto (" + ex.getMessage() + ").");
-                    System.err.println("""
-                        Este puesto ya no esta autorizado. Puede que lo hayan eliminado o regenerado
-                        su codigo desde VetControl. Volve a vincularlo con:
-                          vetcontrol-agente --emparejar CODIGO
-                        """);
+                    // Sin consola, la unica forma de que alguien se entere es un cartel.
+                    VentanaVinculacion.aviso(
+                        "Esta PC ya no esta autorizada a imprimir.\n\n"
+                            + "Puede que hayan eliminado el puesto o generado un codigo nuevo desde "
+                            + "VetControl.\n\nDescarga un archivo de vinculacion nuevo y volve a abrir "
+                            + "el agente.");
+                    iconoActivo.quitar();
                     return;
                 }
                 esperar(backoff.siguienteMs(), "API no disponible: " + ex.getMessage());
