@@ -69,16 +69,20 @@ public final class AgenteMain {
             return;
         }
 
-        // Sin vincular se abre la ventana en vez de tirar instrucciones por consola: quien atiende
-        // un mostrador no va a abrir una terminal para tipear un codigo.
-        if (!config.estaEmparejado()
-            && !new Vinculador(config, bitacora).vincularConVentana()) {
-            System.exit(2);
-            return;
+        // Sin vincular, el agente se anuncia y abre VetControl en el navegador para que el usuario
+        // elija el puesto. Nadie tipea un codigo ni abre una terminal: ese era el paso donde se
+        // perdia la gente.
+        boolean recienVinculado = false;
+        if (!config.estaEmparejado()) {
+            if (!new Vinculador(config, bitacora).vincular()) {
+                System.exit(2);
+                return;
+            }
+            recienVinculado = true;
         }
 
         ApiCliente api = new ApiCliente(config.baseUrl(), config.token());
-        new AgenteMain(config, api, bitacora, opciones.dryRun()).correr();
+        new AgenteMain(config, api, bitacora, opciones.dryRun()).correr(recienVinculado);
     }
 
     // ------------------------------------------------------------ acciones
@@ -115,7 +119,7 @@ public final class AgenteMain {
         }
     }
 
-    private void correr() {
+    private void correr(boolean recienVinculado) {
         bitacora.info("Agente " + VERSION + " iniciado. Puesto='" + config.puestoNombre()
             + "' api=" + config.baseUrl() + (dryRun ? " [DRY-RUN]" : ""));
 
@@ -127,6 +131,13 @@ public final class AgenteMain {
             bandeja.quitar();
             System.exit(0);
         }, AgenteConfig.directorioDatos().resolve("agente.log"));
+
+        // Un globo, no un dialogo: avisa sin bloquear ni exigir un clic que quiza nadie de, porque
+        // quien vinculo esta PC pudo hacerlo desde otra maquina.
+        if (recienVinculado) {
+            bandeja.notificar("VetControl",
+                "Listo: esta PC ya imprime los tickets del puesto \"" + config.puestoNombre() + "\".");
+        }
 
         reportarImpresoras();
 

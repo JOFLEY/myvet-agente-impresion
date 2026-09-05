@@ -56,6 +56,46 @@ public final class ApiCliente {
             respuesta.path("token").asText());
     }
 
+    /**
+     * "Soy una PC recien instalada": deja la solicitud lista para que un usuario la reclame desde
+     * VetControl. Se puede repetir -- cada anuncio renueva los 10 minutos de vigencia, que es como
+     * el agente aguanta esperando mientras la persona busca su sesion.
+     */
+    public void anunciar(String solicitud, String host, String version) {
+        ObjectNode cuerpo = json.createObjectNode()
+            .put("solicitud", solicitud)
+            .put("host", host)
+            .put("version", version);
+        enviar(HttpRequest.newBuilder(uri("/api/impresion/agente/anunciar"))
+            .timeout(TIMEOUT_NORMAL)
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(cuerpo.toString())),
+            HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * Pasa a buscar el token. POST y no GET porque el secreto va en el cuerpo: nginx escribe la URL
+     * entera en su log de accesos.
+     *
+     * @return {@code null} mientras nadie eligio el puesto todavia (204).
+     */
+    public Emparejamiento reclamarVinculacion(String solicitud) {
+        ObjectNode cuerpo = json.createObjectNode().put("solicitud", solicitud);
+        HttpResponse<String> respuesta = enviar(
+            HttpRequest.newBuilder(uri("/api/impresion/agente/vinculacion"))
+                .timeout(TIMEOUT_NORMAL)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(cuerpo.toString())),
+            HttpResponse.BodyHandlers.ofString());
+
+        if (respuesta.statusCode() == 204) return null;
+        JsonNode nodo = leer(respuesta.body());
+        return new Emparejamiento(
+            nodo.path("puestoId").asLong(),
+            nodo.path("nombre").asText(),
+            nodo.path("token").asText());
+    }
+
     public void usarToken(String token) {
         this.token = token;
     }

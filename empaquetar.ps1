@@ -1,14 +1,30 @@
-# Empaqueta el agente de impresion como una aplicacion autocontenida de Windows.
+# Empaqueta el agente de impresion como un INSTALADOR de Windows de un solo
+# archivo.
 #
 # El resultado incluye su propio runtime de Java: la clinica no instala Java ni
 # tiene que actualizarlo nunca, que es justamente parte de por que elegimos esta
 # arquitectura (ver docs/plan-impresion-directa-tickets.md).
 #
+# Un solo .exe y no un zip: descomprimir era el paso donde se perdia la gente, y
+# ademas tiene una trampa silenciosa -- si alguien hace doble clic en el .exe
+# DENTRO del zip, Windows lo extrae a una carpeta temporal y el arranque
+# automatico queda apuntando a una carpeta que se borra sola.
+#
+# El instalador es GENERICO: el mismo archivo para todas las clinicas. La PC se
+# vincula despues, sola, abriendo VetControl en el navegador.
+#
 # Uso:
-#   .\empaquetar.ps1              -> app-image + zip (no necesita nada extra)
-#   .\empaquetar.ps1 -Msi         -> ademas un instalador .msi (requiere WiX 3)
+#   .\empaquetar.ps1              -> instalador .exe (y app-image para probar)
+#   .\empaquetar.ps1 -SoloImagen  -> solo el app-image, sin instalador
+#
+# Requisito del instalador: WiX 3 (candle.exe/light.exe) en el PATH. No hace
+# falta instalarlo en el sistema: alcanza con descomprimir wix314-binaries.zip
+# (https://github.com/wixtoolset/wix3/releases) y apuntar -Wix a esa carpeta.
 
-param([switch]$Msi)
+param(
+    [switch]$SoloImagen,
+    [string]$Wix = "C:\Tools\wix314"
+)
 
 $ErrorActionPreference = "Stop"
 $raiz = $PSScriptRoot
@@ -54,32 +70,47 @@ try {
         --description "Agente de impresion de tickets de VetControl"
     if ($LASTEXITCODE -ne 0) { throw "jpackage fallo (exit $LASTEXITCODE)" }
 
-    Write-Host "`n== 4/4 Comprimiendo ==" -ForegroundColor Cyan
-    $zip = "$dist\$nombre-$version.zip"
-    Remove-Item $zip -Force -ErrorAction SilentlyContinue
-    Compress-Archive -Path "$dist\$nombre" -DestinationPath $zip
-    Write-Host ("   {0}  ({1:N1} MB)" -f $zip, ((Get-Item $zip).Length / 1MB))
-
-    if ($Msi) {
-        if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
-            Write-Warning "WiX 3 no esta instalado: se omite el .msi. Instalalo desde https://wixtoolset.org/"
-        } else {
-            Write-Host "`n== extra: instalador MSI ==" -ForegroundColor Cyan
-            & $jpackage `
-                --type msi `
-                --name $nombre `
-                --app-version $version `
-                --input $staging `
-                --main-jar (Split-Path $jar -Leaf) `
-                --main-class py.com.vetcontrol.agente.AgenteMain `
-                --dest $dist `
-                --win-dir-chooser --win-menu `
-                --vendor "VetControl"
-        }
+    if ($SoloImagen) {
+        Write-Host "`nListo (solo imagen). Ejecutable: $dist\$nombre\$nombre.exe" -ForegroundColor Green
+        return
     }
 
-    Write-Host "`nListo. Ejecutable: $dist\$nombre\$nombre.exe" -ForegroundColor Green
-    Write-Host "Runbook de instalacion: docs/runbook-agente-impresion.md"
+    Write-Host "`n== 4/4 Generando el instalador ==" -ForegroundColor Cyan
+    if (Test-Path $Wix) { $env:PATH = "$Wix;$env:PATH" }
+    if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+        throw ("WiX 3 no esta disponible. Descarga wix314-binaries.zip de " +
+            "https://github.com/wixtoolset/wix3/releases, descomprimilo en $Wix " +
+            "y volve a correr. O usa -SoloImagen si solo queres probar el agente.")
+    }
+
+    $instalador = "$dist\$nombre-$version.exe"
+    Remove-Item $instalador -Force -ErrorAction SilentlyContinue
+
+    # --win-per-user-install: instala en el perfil del usuario y por eso NO pide
+    # permisos de administrador. Es deliberado: quien atiende un mostrador rara
+    # vez es administrador de esa PC, y ademas el agente TIENE que correr como el
+    # usuario logueado (un servicio en la Sesion 0 no ve las impresoras de red
+    # mapeadas por usuario).
+    #
+    # Sin --win-dir-chooser: elegir carpeta es una decision que el usuario no
+    # tiene con que tomar. Se instala donde corresponde y listo.
+    & $jpackage `
+        --type exe `
+        --name $nombre `
+        --app-version $version `
+        --app-image "$dist\$nombre" `
+        --dest $dist `
+        --vendor "VetControl" `
+        --description "Agente de impresion de tickets de VetControl" `
+        --win-per-user-install `
+        --win-shortcut `
+        --win-menu --win-menu-group "VetControl"
+    if ($LASTEXITCODE -ne 0) { throw "jpackage fallo generando el instalador (exit $LASTEXITCODE)" }
+    if (-not (Test-Path $instalador)) { throw "No se genero $instalador" }
+
+    Write-Host ("   {0}  ({1:N1} MB)" -f $instalador, ((Get-Item $instalador).Length / 1MB))
+    Write-Host "`nListo. Instalador: $instalador" -ForegroundColor Green
+    Write-Host "Subilo al VPS como AGENTE_INSTALADOR_PATH (ver docs/runbook-agente-impresion.md)."
 } finally {
     Pop-Location
 }
