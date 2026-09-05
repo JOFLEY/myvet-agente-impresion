@@ -11,7 +11,7 @@
 # automatico queda apuntando a una carpeta que se borra sola.
 #
 # El instalador es GENERICO: el mismo archivo para todas las clinicas. La PC se
-# vincula despues, sola, abriendo VetControl en el navegador.
+# vincula despues, sola, abriendo MyVet en el navegador.
 #
 # Uso:
 #   .\empaquetar.ps1              -> instalador .exe (y app-image para probar)
@@ -29,7 +29,7 @@ param(
 $ErrorActionPreference = "Stop"
 $raiz = $PSScriptRoot
 $version = "0.1.0"
-$nombre = "VetControlAgente"
+$nombre = "MyVetAgente"
 
 Push-Location $raiz
 try {
@@ -66,8 +66,8 @@ try {
         --main-jar (Split-Path $jar -Leaf) `
         --main-class py.com.vetcontrol.agente.AgenteMain `
         --dest $dist `
-        --vendor "VetControl" `
-        --description "Agente de impresion de tickets de VetControl"
+        --vendor "MyVet" `
+        --description "Agente de impresion de tickets de MyVet"
     if ($LASTEXITCODE -ne 0) { throw "jpackage fallo (exit $LASTEXITCODE)" }
 
     if ($SoloImagen) {
@@ -100,11 +100,11 @@ try {
         --app-version $version `
         --app-image "$dist\$nombre" `
         --dest $dist `
-        --vendor "VetControl" `
-        --description "Agente de impresion de tickets de VetControl" `
+        --vendor "MyVet" `
+        --description "Agente de impresion de tickets de MyVet" `
         --win-per-user-install `
         --win-shortcut `
-        --win-menu --win-menu-group "VetControl"
+        --win-menu --win-menu-group "MyVet"
     if ($LASTEXITCODE -ne 0) { throw "jpackage fallo generando el instalador (exit $LASTEXITCODE)" }
     if (-not (Test-Path $instalador)) { throw "No se genero $instalador" }
 

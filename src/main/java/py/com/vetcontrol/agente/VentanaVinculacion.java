@@ -42,14 +42,14 @@ public final class VentanaVinculacion {
     public static Resultado pedir() {
         AtomicReference<Vinculacion> elegida = new AtomicReference<>();
 
-        JDialog dialogo = new JDialog((java.awt.Frame) null, "Agente de impresion VetControl", true);
+        JDialog dialogo = new JDialog((java.awt.Frame) null, "Agente de impresion MyVet", true);
         dialogo.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-        JLabel titulo = new JLabel("Vincular esta PC con VetControl");
+        JLabel titulo = new JLabel("Vincular esta PC con MyVet");
         titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 16f));
 
         JLabel ayuda = new JLabel(
-            "<html>En VetControl, entra a <b>Configuraciones &gt; Impresion</b>, agrega un puesto"
+            "<html>En MyVet, entra a <b>Configuraciones &gt; Impresion</b>, agrega un puesto"
                 + " y descarga su archivo de vinculacion.</html>");
 
         JLabel zona = new JLabel(
@@ -87,7 +87,7 @@ public final class VentanaVinculacion {
             JFileChooser selector = new JFileChooser();
             selector.setDialogTitle("Elegi el archivo de vinculacion");
             selector.setFileFilter(
-                new FileNameExtensionFilter("Vinculacion de VetControl (*.vcagente)", "vcagente"));
+                new FileNameExtensionFilter("Vinculacion de MyVet (*.vcagente)", "vcagente"));
             if (selector.showOpenDialog(dialogo) == JFileChooser.APPROVE_OPTION) {
                 aplicar(dialogo, elegida, selector.getSelectedFile().toPath());
             }
@@ -163,11 +163,11 @@ public final class VentanaVinculacion {
     }
 
     static void error(java.awt.Component padre, String mensaje) {
-        JOptionPane.showMessageDialog(padre, mensaje, "VetControl", JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(padre, mensaje, "MyVet", JOptionPane.WARNING_MESSAGE);
     }
 
     public static void aviso(String mensaje) {
-        JOptionPane.showMessageDialog(null, mensaje, "VetControl", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(null, mensaje, "MyVet", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public record Resultado(Vinculacion vinculacion, boolean arranqueAutomatico) {}

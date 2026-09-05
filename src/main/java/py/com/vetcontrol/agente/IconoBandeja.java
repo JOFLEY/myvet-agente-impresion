@@ -57,7 +57,7 @@ public final class IconoBandeja {
             salir.addActionListener(e -> alSalir.run());
             menu.add(salir);
 
-            icono = new TrayIcon(dibujar(), "VetControl - " + puesto, menu);
+            icono = new TrayIcon(dibujar(), "MyVet - " + puesto, menu);
             icono.setImageAutoSize(true);
             SystemTray.getSystemTray().add(icono);
             return true;

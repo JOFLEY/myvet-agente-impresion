@@ -199,18 +199,18 @@ public final class Vinculador {
             if (mostrarCartel) {
                 VentanaVinculacion.aviso(
                     "Listo. Esta PC quedo vinculada al puesto \"" + par.nombre() + "\".\n\n"
-                        + "Ahora entra a VetControl y elegi cual de sus impresoras es la de tickets.");
+                        + "Ahora entra a MyVet y elegi cual de sus impresoras es la de tickets.");
             }
             return true;
         } catch (ApiException ex) {
             String detalle = ex.status() == 0
-                ? "No se pudo contactar a VetControl. Revisa la conexion a internet."
+                ? "No se pudo contactar a MyVet. Revisa la conexion a internet."
                 : ex.getMessage();
             bitacora.error("Fallo la vinculacion: " + detalle);
             if (mostrarCartel) {
                 VentanaVinculacion.aviso(
                     "No se pudo vincular:\n\n" + detalle
-                        + "\n\nSi el archivo tiene mas de 10 minutos, descarga uno nuevo desde VetControl.");
+                        + "\n\nSi el archivo tiene mas de 10 minutos, descarga uno nuevo desde MyVet.");
             }
             return false;
         }

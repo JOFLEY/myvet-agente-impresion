@@ -38,17 +38,17 @@ public record Vinculacion(String url, String puesto, String codigo) {
             nodo = JSON.readTree(contenido);
         } catch (IOException ex) {
             throw new IllegalArgumentException(
-                "El archivo no tiene el formato esperado. Descarga uno nuevo desde VetControl.");
+                "El archivo no tiene el formato esperado. Descarga uno nuevo desde MyVet.");
         }
         if (!"vinculacion-agente".equals(nodo.path("vetcontrol").asText())) {
             throw new IllegalArgumentException(
-                "Ese archivo no es de vinculacion de VetControl.");
+                "Ese archivo no es de vinculacion de MyVet.");
         }
         String url = nodo.path("url").asText("").trim();
         String codigo = nodo.path("codigo").asText("").trim();
         if (url.isEmpty() || codigo.isEmpty()) {
             throw new IllegalArgumentException(
-                "El archivo esta incompleto. Descarga uno nuevo desde VetControl.");
+                "El archivo esta incompleto. Descarga uno nuevo desde MyVet.");
         }
         return new Vinculacion(url, nodo.path("puesto").asText("").trim(), codigo);
     }

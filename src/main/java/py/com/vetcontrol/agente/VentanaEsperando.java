@@ -38,14 +38,14 @@ public final class VentanaEsperando {
     }
 
     public static VentanaEsperando mostrar(String host, String url, Bitacora bitacora) {
-        JDialog dialogo = new JDialog((java.awt.Frame) null, "Agente de impresion VetControl", false);
+        JDialog dialogo = new JDialog((java.awt.Frame) null, "Agente de impresion MyVet", false);
         dialogo.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
-        JLabel titulo = new JLabel("Vinculando esta PC con VetControl");
+        JLabel titulo = new JLabel("Vinculando esta PC con MyVet");
         titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 16f));
 
         JLabel ayuda = new JLabel(
-            "<html><body style='width:420px'>Se abrio VetControl en tu navegador. Ahi elegi a que"
+            "<html><body style='width:420px'>Se abrio MyVet en tu navegador. Ahi elegi a que"
                 + " <b>puesto</b> pertenece esta PC y listo.<br><br>Si el navegador no se abrio o"
                 + " todavia no iniciaste sesion, usa el boton de abajo.</body></html>");
 
@@ -58,7 +58,7 @@ public final class VentanaEsperando {
         JLabel estado = new JLabel("Esperando que elijas el puesto...");
         estado.setForeground(new Color(0x52606D));
 
-        JButton reabrir = new JButton("Abrir VetControl otra vez");
+        JButton reabrir = new JButton("Abrir MyVet otra vez");
         reabrir.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JButton archivo = new JButton("Vincular con un archivo");

@@ -14,7 +14,15 @@ import java.nio.file.Path;
 public final class ArranqueAutomatico {
 
     static final String CLAVE = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run";
-    static final String VALOR = "VetControlAgente";
+    static final String VALOR = "MyVetAgente";
+
+    /**
+     * Como se llamaba la entrada cuando el agente era VetControl.
+     *
+     * <p>Hay que borrarla al activar la nueva, o Windows arrancaria DOS agentes: el viejo (que
+     * apunta a una instalacion que quiza ya no existe) y el nuevo.
+     */
+    static final String VALOR_ANTERIOR = "VetControlAgente";
 
     private ArranqueAutomatico() {}
 
@@ -47,6 +55,9 @@ public final class ArranqueAutomatico {
     public static boolean activar() {
         Path exe = ejecutable();
         if (!disponible() || exe == null) return false;
+        // Se limpia la entrada del nombre viejo antes de poner la nueva: dos agentes arrancando a
+        // la vez se pelearian los mismos tickets.
+        ejecutarReg("delete", CLAVE, "/v", VALOR_ANTERIOR, "/f");
         return ejecutarReg("add", CLAVE, "/v", VALOR, "/t", "REG_SZ", "/d", exe.toString(), "/f");
     }
 

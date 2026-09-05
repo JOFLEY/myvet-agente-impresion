@@ -49,7 +49,7 @@ public final class AgenteMain {
             return;
         }
         if (opciones.version()) {
-            System.out.println("Agente de impresion VetControl " + VERSION);
+            System.out.println("Agente de impresion MyVet " + VERSION);
             return;
         }
         if (opciones.listarImpresoras()) {
@@ -135,7 +135,7 @@ public final class AgenteMain {
         // Un globo, no un dialogo: avisa sin bloquear ni exigir un clic que quiza nadie de, porque
         // quien vinculo esta PC pudo hacerlo desde otra maquina.
         if (recienVinculado) {
-            bandeja.notificar("VetControl",
+            bandeja.notificar("MyVet",
                 "Listo: esta PC ya imprime los tickets del puesto \"" + config.puestoNombre() + "\".");
         }
 
@@ -163,7 +163,7 @@ public final class AgenteMain {
                     VentanaVinculacion.aviso(
                         "Esta PC ya no esta autorizada a imprimir.\n\n"
                             + "Puede que hayan eliminado el puesto o generado un codigo nuevo desde "
-                            + "VetControl.\n\nDescarga un archivo de vinculacion nuevo y volve a abrir "
+                            + "MyVet.\n\nDescarga un archivo de vinculacion nuevo y volve a abrir "
                             + "el agente.");
                     iconoActivo.quitar();
                     return;
@@ -192,7 +192,7 @@ public final class AgenteMain {
             }
 
             byte[] pdf = api.pdf(trabajo.id());
-            String detalle = impresor.imprimir(pdf, destino.get(), "VetControl ticket " + trabajo.id());
+            String detalle = impresor.imprimir(pdf, destino.get(), "MyVet ticket " + trabajo.id());
 
             if (dryRun) {
                 // No mentimos: en dry-run el ticket NO salio, y asi se ve en VetControl.
@@ -246,7 +246,7 @@ public final class AgenteMain {
 
     private static void imprimirAyuda() {
         System.out.println("""
-            Agente de impresion VetControl %s
+            Agente de impresion MyVet %s
 
             Uso:
               vetcontrol-agente                        Queda escuchando e imprime los tickets.

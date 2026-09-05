@@ -42,9 +42,52 @@ class AgenteConfigTest {
         assertThat(config.baseUrl()).isEqualTo("https://myvet.serfley.com");
     }
 
+    /**
+     * El agente se llamaba VetControl y ahora se llama MyVet, asi que la carpeta de datos cambio de
+     * nombre. Sin heredar la configuracion, cada clinica que ya lo tenia andando veria su PC como
+     * "sin vincular" despues de actualizar, y habria que rehacer la vinculacion a mano.
+     */
+    @Test
+    void alCambiarDeNombreHeredaLaVinculacionQueYaExistia(@TempDir Path base) throws Exception {
+        Path anterior = base.resolve("VetControlAgente");
+        AgenteConfig vieja = AgenteConfig.cargarDesde(anterior);
+        vieja.emparejado("tok-heredado", 9L, "Mostrador");
+        vieja.guardar();
+
+        AgenteConfig nueva = AgenteConfig.cargarDesde(base.resolve("MyVetAgente"));
+
+        assertThat(nueva.estaEmparejado()).isTrue();
+        assertThat(nueva.token()).isEqualTo("tok-heredado");
+        assertThat(nueva.puestoNombre()).isEqualTo("Mostrador");
+        // Se copia, no se mueve: si algo falla, la instalacion vieja sigue intacta.
+        assertThat(Files.exists(anterior.resolve("agente.properties"))).isTrue();
+    }
+
+    @Test
+    void unaConfiguracionPropiaLeGanaALaHeredada(@TempDir Path base) {
+        Path anterior = base.resolve("VetControlAgente");
+        AgenteConfig vieja = AgenteConfig.cargarDesde(anterior);
+        vieja.emparejado("tok-viejo", 1L, "Viejo");
+        vieja.guardar();
+
+        Path actual = base.resolve("MyVetAgente");
+        AgenteConfig propia = AgenteConfig.cargarDesde(actual);
+        propia.emparejado("tok-actual", 2L, "Actual");
+        propia.guardar();
+
+        assertThat(AgenteConfig.cargarDesde(actual).token()).isEqualTo("tok-actual");
+    }
+
+    @Test
+    void sinCarpetaAnteriorNoHayNadaQueHeredar(@TempDir Path base) {
+        AgenteConfig config = AgenteConfig.cargarDesde(base.resolve("MyVetAgente"));
+
+        assertThat(config.estaEmparejado()).isFalse();
+    }
+
     @Test
     void guardarCreaElDirectorioSiNoExiste(@TempDir Path dir) {
-        Path anidado = dir.resolve("VetControlAgente");
+        Path anidado = dir.resolve("MyVetAgente");
         AgenteConfig config = AgenteConfig.cargarDesde(anidado);
         config.emparejado("tok", 1L, "P");
 
