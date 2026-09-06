@@ -10,11 +10,22 @@ import javax.print.PrintService;
  *
  * <p>Corre en la PC que tiene la impresora, hace long-poll SALIENTE contra la API y imprime los
  * tickets que le entregan. No abre ningun puerto: el navegador nunca lo contacta. Ver
- * docs/plan-impresion-directa-tickets.md.
+ * el README de este repositorio.
  */
 public final class AgenteMain {
 
-    public static final String VERSION = "0.1.0";
+    /**
+     * Version que el agente reporta al servidor y muestra en pantalla. Sale del manifiesto del jar
+     * ({@code Implementation-Version}), que el build llena desde el tag: una constante escrita a
+     * mano se olvida y termina informando una version distinta de la instalada. Fuera del jar
+     * empaquetado (tests, IDE) no hay manifiesto y queda {@code dev}.
+     */
+    public static final String VERSION = versionEmpaquetada();
+
+    private static String versionEmpaquetada() {
+        String delManifiesto = AgenteMain.class.getPackage().getImplementationVersion();
+        return delManifiesto == null || delManifiesto.isBlank() ? "dev" : delManifiesto;
+    }
 
     /** Cada cuantos ciclos vacios se vuelve a reportar la lista de impresoras. */
     private static final int CICLOS_ENTRE_REPORTES = 60;

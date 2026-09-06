@@ -3,7 +3,7 @@
 #
 # El resultado incluye su propio runtime de Java: la clinica no instala Java ni
 # tiene que actualizarlo nunca, que es justamente parte de por que elegimos esta
-# arquitectura (ver docs/plan-impresion-directa-tickets.md).
+# arquitectura (ver README.md).
 #
 # Un solo .exe y no un zip: descomprimir era el paso donde se perdia la gente, y
 # ademas tiene una trampa silenciosa -- si alguien hace doble clic en el .exe
@@ -23,18 +23,24 @@
 
 param(
     [switch]$SoloImagen,
-    [string]$Wix = "C:\Tools\wix314"
+    [string]$Wix = "C:\Tools\wix314",
+    # La CI la pasa desde el tag (v0.2.0 -> 0.2.0) para que el binario
+    # publicado y la version que declara el ejecutable no puedan divergir.
+    [string]$Version = "0.1.0"
 )
 
 $ErrorActionPreference = "Stop"
 $raiz = $PSScriptRoot
-$version = "0.1.0"
+$version = $Version
 $nombre = "MyVetAgente"
 
 Push-Location $raiz
 try {
     Write-Host "== 1/4 Compilando y testeando ==" -ForegroundColor Cyan
-    & "$raiz\mvnw.cmd" -q clean package
+    # -Dagente.version: lo que el agente reporta al servidor sale del manifiesto
+    # del jar, asi que la version del instalador y la que declara el binario son
+    # siempre la misma.
+    & "$raiz\mvnw.cmd" -q clean package "-Dagente.version=$version"
     if ($LASTEXITCODE -ne 0) { throw "El build de Maven fallo (exit $LASTEXITCODE)" }
 
     $jar = "$raiz\target\vetcontrol-agente.jar"
@@ -110,7 +116,7 @@ try {
 
     Write-Host ("   {0}  ({1:N1} MB)" -f $instalador, ((Get-Item $instalador).Length / 1MB))
     Write-Host "`nListo. Instalador: $instalador" -ForegroundColor Green
-    Write-Host "Subilo al VPS como AGENTE_INSTALADOR_PATH (ver docs/runbook-agente-impresion.md)."
+    Write-Host "Para publicarlo: tag vX.Y.Z (ver docs/firma-de-codigo.md)."
 } finally {
     Pop-Location
 }
