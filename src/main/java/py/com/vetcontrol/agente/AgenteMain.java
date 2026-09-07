@@ -80,6 +80,21 @@ public final class AgenteMain {
             return;
         }
 
+        // Un solo agente por PC. Abrir el acceso directo con el agente ya corriendo (lo normal:
+        // arranca con Windows) dejaba dos escuchando la misma cola, y un ticket podia salir dos
+        // veces. Ademas, sin ventana que mostrar, parecia que el doble clic no hacia nada.
+        InstanciaUnica candado = InstanciaUnica.tomar();
+        if (candado == null) {
+            bitacora.info("Ya habia un agente corriendo: esta instancia no arranca.");
+            System.out.println("MyVet ya esta funcionando en esta PC.");
+            VentanaVinculacion.aviso(
+                "MyVet ya esta funcionando en esta PC.\n\n"
+                    + "Lo vas a encontrar en el icono junto al reloj, abajo a la derecha\n"
+                    + "(puede estar escondido en la flechita \"Mostrar iconos ocultos\").");
+            return;
+        }
+        Runtime.getRuntime().addShutdownHook(new Thread(candado::close));
+
         // Sin vincular, el agente se anuncia y abre VetControl en el navegador para que el usuario
         // elija el puesto. Nadie tipea un codigo ni abre una terminal: ese era el paso donde se
         // perdia la gente.
@@ -148,6 +163,11 @@ public final class AgenteMain {
         if (recienVinculado) {
             bandeja.notificar("MyVet",
                 "Listo: esta PC ya imprime los tickets del puesto \"" + config.puestoNombre() + "\".");
+        } else {
+            // Abrir el agente tiene que producir SIEMPRE algo visible. Sin esto, con la PC ya
+            // vinculada no aparecia ninguna ventana y el doble clic parecia no hacer nada.
+            bandeja.notificar("MyVet",
+                "Imprimiendo los tickets del puesto \"" + config.puestoNombre() + "\".");
         }
 
         reportarImpresoras();
