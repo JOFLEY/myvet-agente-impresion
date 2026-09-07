@@ -70,11 +70,30 @@ Requisitos:
 El mismo script es el que corre la CI, asi que el binario publicado se
 reproduce con un comando.
 
-## Builds y firma
+## Builds y firma de codigo
 
 Cada release se compila en GitHub Actions desde este repositorio
 (`.github/workflows/build.yml`) y el artefacto se envia a firmar sin pasar por
 ninguna maquina personal.
+
+**Code signing policy:** free code signing provided by
+[SignPath.io](https://signpath.io/), certificate by
+[SignPath Foundation](https://signpath.org/).
+
+> Estado: la solicitud a SignPath Foundation esta en curso. Hasta que se
+> apruebe, los instaladores publicados **no estan firmados** y Windows los va a
+> tratar como de origen desconocido. Se puede verificar cual es cual con
+> `Get-AuthenticodeSignature`.
+
+Para comprobar que un instalador corresponde a este codigo, comparar su SHA-256
+con el que imprime el log del build en GitHub Actions. **No** coincide con el de
+una compilacion local: cada maquina empaqueta su propio JDK.
+
+## Privacidad
+
+Que guarda en la PC, que envia y a donde: [PRIVACY.md](PRIVACY.md). Resumen: el
+unico destino de los datos es el servidor de la propia clinica; no hay
+telemetria y los autores de este software no reciben nada.
 
 ## Licencia
 
