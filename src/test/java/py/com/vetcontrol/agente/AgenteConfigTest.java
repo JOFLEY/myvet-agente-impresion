@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -43,6 +44,27 @@ class AgenteConfigTest {
     }
 
     /**
+     * Hasta la 0.3.0 los datos vivian en la carpeta de instalacion, y el instalador la vacia al
+     * actualizar: la PC quedaba pidiendo vincularse de nuevo. Comprobado instalando la 0.3.0 sobre
+     * la 0.1.0 en una PC real. Al mudarlos hay que heredar lo que quedo, o el arreglo introduce el
+     * mismo problema que viene a resolver.
+     */
+    @Test
+    void heredaLaVinculacionDeLaCarpetaQueBorraElInstalador(@TempDir Path base) {
+        Path instalacion = base.resolve("MyVetAgente");
+        AgenteConfig vieja = AgenteConfig.cargarDesde(instalacion);
+        vieja.emparejado("tok-instalacion", 4L, "admin");
+        vieja.guardar();
+
+        AgenteConfig nueva = AgenteConfig.cargarDesde(
+            base.resolve("MyVet").resolve("Agente"), List.of(instalacion));
+
+        assertThat(nueva.estaEmparejado()).isTrue();
+        assertThat(nueva.token()).isEqualTo("tok-instalacion");
+        assertThat(nueva.puestoNombre()).isEqualTo("admin");
+    }
+
+    /**
      * El agente se llamaba VetControl y ahora se llama MyVet, asi que la carpeta de datos cambio de
      * nombre. Sin heredar la configuracion, cada clinica que ya lo tenia andando veria su PC como
      * "sin vincular" despues de actualizar, y habria que rehacer la vinculacion a mano.
@@ -54,7 +76,8 @@ class AgenteConfigTest {
         vieja.emparejado("tok-heredado", 9L, "Mostrador");
         vieja.guardar();
 
-        AgenteConfig nueva = AgenteConfig.cargarDesde(base.resolve("MyVetAgente"));
+        AgenteConfig nueva = AgenteConfig.cargarDesde(
+            base.resolve("MyVet").resolve("Agente"), List.of(anterior));
 
         assertThat(nueva.estaEmparejado()).isTrue();
         assertThat(nueva.token()).isEqualTo("tok-heredado");

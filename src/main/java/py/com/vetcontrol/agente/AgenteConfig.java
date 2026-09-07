@@ -6,15 +6,21 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /**
  * Configuracion persistente del agente: donde esta la API y el token del puesto.
  *
- * <p>Vive en el perfil del usuario ({@code %LOCALAPPDATA%\MyVetAgente} en Windows) y no en
- * Archivos de Programa, porque el agente corre como el usuario logueado — no como servicio. Eso no
- * es un detalle: las impresoras de red mapeadas por usuario NO son visibles para un servicio
- * corriendo en la Sesion 0.
+ * <p>Vive en el perfil del usuario y no en Archivos de Programa, porque el agente corre como el
+ * usuario logueado — no como servicio. Eso no es un detalle: las impresoras de red mapeadas por
+ * usuario NO son visibles para un servicio corriendo en la Sesion 0.
+ *
+ * <p>Y vive FUERA de la carpeta donde se instala el programa. Hasta la 0.3.0 los datos estaban en
+ * {@code %LOCALAPPDATA%\MyVetAgente}, que es justo el directorio de instalacion: actualizar el
+ * agente borraba la vinculacion y la PC quedaba pidiendo vincularse de nuevo. Se comprobo
+ * instalando la 0.3.0 sobre la 0.1.0.
  */
 public final class AgenteConfig {
 
@@ -23,12 +29,13 @@ public final class AgenteConfig {
     private static final String ARCHIVO = "agente.properties";
 
     /**
-     * Nombre anterior de la carpeta, cuando el agente se llamaba VetControl.
+     * Carpetas donde vivieron los datos antes, en orden de preferencia: la del instalador hasta la
+     * 0.3.0, y la de cuando el agente se llamaba VetControl.
      *
-     * <p>Se lee una sola vez para no obligar a nadie a volver a vincular su PC: quien ya tenia el
-     * agente andando cambio de nombre, no de puesto.
+     * <p>Se leen una sola vez para no obligar a nadie a volver a vincular su PC: quien ya tenia el
+     * agente andando cambio de carpeta, no de puesto.
      */
-    private static final String CARPETA_ANTERIOR = "VetControlAgente";
+    private static final List<String> CARPETAS_ANTERIORES = List.of("MyVetAgente", "VetControlAgente");
 
     private final Path archivo;
     private final Properties props = new Properties();
@@ -38,13 +45,17 @@ public final class AgenteConfig {
     }
 
     public static AgenteConfig cargar() {
-        return cargarDesde(directorioDatos());
+        return cargarDesde(directorioDatos(), carpetasHeredables());
     }
 
     static AgenteConfig cargarDesde(Path directorio) {
+        return cargarDesde(directorio, List.of());
+    }
+
+    static AgenteConfig cargarDesde(Path directorio, List<Path> anteriores) {
         Path archivo = directorio.resolve(ARCHIVO);
         if (!Files.exists(archivo)) {
-            heredarDeCarpetaAnterior(directorio, archivo);
+            heredarDeCarpetaAnterior(anteriores, directorio, archivo);
         }
 
         AgenteConfig config = new AgenteConfig(archivo);
@@ -65,9 +76,16 @@ public final class AgenteConfig {
      * vinculacion en cada clinica que ya lo tenia funcionando. Se copia y no se mueve: si algo sale
      * mal, la instalacion vieja sigue intacta.
      */
-    private static void heredarDeCarpetaAnterior(Path directorio, Path destino) {
-        Path anterior = directorio.resolveSibling(CARPETA_ANTERIOR).resolve(ARCHIVO);
-        if (!Files.exists(anterior)) return;
+    private static void heredarDeCarpetaAnterior(List<Path> anteriores, Path directorio, Path destino) {
+        Path anterior = null;
+        for (Path carpeta : anteriores) {
+            Path candidato = carpeta.resolve(ARCHIVO);
+            if (Files.exists(candidato)) {
+                anterior = candidato;
+                break;
+            }
+        }
+        if (anterior == null) return;
         try {
             Files.createDirectories(directorio);
             Files.copy(anterior, destino);
@@ -76,13 +94,29 @@ public final class AgenteConfig {
         }
     }
 
-    /** {@code %LOCALAPPDATA%\MyVetAgente} en Windows, {@code ~/.myvet-agente} en el resto. */
+    /**
+     * {@code %LOCALAPPDATA%\MyVet\Agente} en Windows, {@code ~/.myvet-agente} en el resto.
+     *
+     * <p>No es {@code %LOCALAPPDATA%\MyVetAgente}: esa es la carpeta de instalacion y el
+     * instalador la vacia al actualizar.
+     */
     public static Path directorioDatos() {
         String localAppData = System.getenv("LOCALAPPDATA");
         if (localAppData != null && !localAppData.isBlank()) {
-            return Paths.get(localAppData, "MyVetAgente");
+            return Paths.get(localAppData, "MyVet", "Agente");
         }
         return Paths.get(System.getProperty("user.home"), ".myvet-agente");
+    }
+
+    /** Donde buscar una vinculacion anterior cuando la carpeta nueva todavia esta vacia. */
+    static List<Path> carpetasHeredables() {
+        String localAppData = System.getenv("LOCALAPPDATA");
+        if (localAppData == null || localAppData.isBlank()) return List.of();
+        List<Path> carpetas = new ArrayList<>();
+        for (String nombre : CARPETAS_ANTERIORES) {
+            carpetas.add(Paths.get(localAppData, nombre));
+        }
+        return carpetas;
     }
 
     public void guardar() {
