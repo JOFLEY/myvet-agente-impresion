@@ -83,13 +83,19 @@ public final class Vinculador {
         }
 
         String url = VinculacionNavegador.urlVinculacion(config.baseUrl(), secreto);
+
+        // La ventana va PRIMERO y el navegador despues. Al reves, abrir el navegador le entrega el
+        // primer plano al navegador y la ventana del agente nace enterrada detras: ese es el "le
+        // doy doble clic y no se abre nada" del primer arranque. Ver Ventanas.
+        VentanaEsperando ventana = VentanaEsperando.mostrar(host, url, bitacora);
+
         if (!VinculacionNavegador.abrir(url, bitacora)) {
+            ventana.cerrar();
             bitacora.error("No se pudo abrir el navegador; se ofrece el camino manual.");
             return Resultado.PROBAR_OTRO_CAMINO;
         }
         bitacora.info("Esperando que elijan el puesto desde el navegador (PC: " + host + ").");
 
-        VentanaEsperando ventana = VentanaEsperando.mostrar(host, url, bitacora);
         try {
             return esperarVinculacion(api, secreto, host, ventana);
         } finally {

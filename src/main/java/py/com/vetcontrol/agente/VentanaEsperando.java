@@ -11,7 +11,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -23,23 +23,27 @@ import javax.swing.SwingUtilities;
  * <p>No es modal a proposito: el hilo principal sigue preguntandole al servidor y cierra esta
  * ventana solo cuando la vinculacion se completa. Una ventana modal bloquearia justamente al hilo
  * que tiene que hacer el trabajo -- ya nos paso con el dialogo de arrastrar el archivo.
+ *
+ * <p>Es un {@link JFrame} y no un {@code JDialog} sin duenio: solo un frame recibe boton en la
+ * barra de tareas, y sin ese boton la ventana quedaba enterrada detras del navegador sin ninguna
+ * forma de recuperarla. Ver {@link Ventanas}.
  */
 public final class VentanaEsperando {
 
     public enum Accion { ESPERANDO, CANCELADO, USAR_ARCHIVO }
 
-    private final JDialog dialogo;
+    private final JFrame dialogo;
     private final JLabel estado;
     private final AtomicReference<Accion> accion = new AtomicReference<>(Accion.ESPERANDO);
 
-    private VentanaEsperando(JDialog dialogo, JLabel estado) {
+    private VentanaEsperando(JFrame dialogo, JLabel estado) {
         this.dialogo = dialogo;
         this.estado = estado;
     }
 
     public static VentanaEsperando mostrar(String host, String url, Bitacora bitacora) {
-        JDialog dialogo = new JDialog((java.awt.Frame) null, "Agente de impresion MyVet", false);
-        dialogo.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        JFrame dialogo = new JFrame("Agente de impresion MyVet");
+        dialogo.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
         JLabel titulo = new JLabel("Vinculando esta PC con MyVet");
         titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 16f));
@@ -92,6 +96,8 @@ public final class VentanaEsperando {
         salir.addActionListener(e -> ventana.terminar(Accion.CANCELADO));
 
         dialogo.setVisible(true);
+        // Sin esto la ventana nace detras del navegador, que acaba de quedarse con el foco.
+        Ventanas.alFrente(dialogo);
         return ventana;
     }
 

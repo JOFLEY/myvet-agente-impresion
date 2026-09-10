@@ -141,6 +141,10 @@ public final class VentanaVinculacion {
         dialogo.add(pie, BorderLayout.SOUTH);
         dialogo.pack();
         dialogo.setLocationRelativeTo(null);
+        // Antes de setVisible: es modal, o sea que esa linea bloquea el hilo y despues ya no hay
+        // chance de traerla al frente. Sin esto se abria detras del navegador, sin boton en la
+        // barra de tareas, y parecia que el agente no habia hecho nada. Ver Ventanas.
+        dialogo.setAlwaysOnTop(true);
         dialogo.setVisible(true);
 
         Vinculacion resultado = elegida.get();
@@ -166,8 +170,9 @@ public final class VentanaVinculacion {
         JOptionPane.showMessageDialog(padre, mensaje, "MyVet", JOptionPane.WARNING_MESSAGE);
     }
 
+    /** Delega en {@link Ventanas}: un cartel sin duenio se pierde detras de lo que haya abierto. */
     public static void aviso(String mensaje) {
-        JOptionPane.showMessageDialog(null, mensaje, "MyVet", JOptionPane.INFORMATION_MESSAGE);
+        Ventanas.aviso(mensaje);
     }
 
     public record Resultado(Vinculacion vinculacion, boolean arranqueAutomatico) {}
