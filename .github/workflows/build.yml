@@ -1,8 +1,8 @@
 name: build
 
 # El instalador que se publica sale SIEMPRE de aca, nunca de una PC personal:
-# es lo que permite verificar que el binario firmado corresponde a este codigo
-# (requisito de SignPath Foundation).
+# el SHA-256 del log del build es lo que permite verificar que el binario
+# publicado corresponde a este codigo.
 
 on:
   push:
@@ -24,7 +24,6 @@ jobs:
     runs-on: windows-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
-      artifact-id: ${{ steps.subir.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v4
 
@@ -63,47 +62,19 @@ jobs:
         run: Get-FileHash "dist\MyVetAgente-${{ steps.version.outputs.version }}.exe" -Algorithm SHA256 | Format-List
 
       - uses: actions/upload-artifact@v4
-        id: subir
         with:
-          name: instalador-sin-firmar
+          name: instalador
           path: dist/MyVetAgente-*.exe
           if-no-files-found: error
 
-  # Firma con SignPath Foundation. Se activa sola cuando esten cargadas las
-  # variables que entrega SignPath al aprobar el proyecto; hasta entonces el
-  # build sigue andando y el release sale sin firmar.
-  firmar:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_PROJECT_SLUG != ''
-    runs-on: ubuntu-latest
-    steps:
-      - uses: signpath/github-action-submit-signing-request@v1
-        with:
-          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
-          github-artifact-id: ${{ needs.build.outputs.artifact-id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-for-completion: true
-          output-artifact-directory: firmado
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: instalador-firmado
-          path: firmado/**
-          if-no-files-found: error
-
   publicar:
-    needs: [build, firmar]
-    if: always() && startsWith(github.ref, 'refs/tags/v') && needs.build.result == 'success'
+    needs: [build]
+    if: startsWith(github.ref, 'refs/tags/v') && needs.build.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
-          # Con firma hay dos artefactos; sin firma solo el primero. Se publica
-          # lo que haya, para que la falta de certificado no frene un release.
-          pattern: instalador-*
+          pattern: instalador
           merge-multiple: true
           path: release
 

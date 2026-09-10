@@ -116,7 +116,7 @@ try {
 
     Write-Host ("   {0}  ({1:N1} MB)" -f $instalador, ((Get-Item $instalador).Length / 1MB))
     Write-Host "`nListo. Instalador: $instalador" -ForegroundColor Green
-    Write-Host "Para publicarlo: tag vX.Y.Z (ver docs/firma-de-codigo.md)."
+    Write-Host "Para publicarlo: tag vX.Y.Z y push (la CI compila y crea el release)."
 } finally {
     Pop-Location
 }

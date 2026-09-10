@@ -70,20 +70,14 @@ Requisitos:
 El mismo script es el que corre la CI, asi que el binario publicado se
 reproduce con un comando.
 
-## Builds y firma de codigo
+## Builds
 
 Cada release se compila en GitHub Actions desde este repositorio
-(`.github/workflows/build.yml`) y el artefacto se envia a firmar sin pasar por
-ninguna maquina personal.
+(`.github/workflows/build.yml`), nunca en una maquina personal.
 
-**Code signing policy:** free code signing provided by
-[SignPath.io](https://signpath.io/), certificate by
-[SignPath Foundation](https://signpath.org/).
-
-> Estado: la solicitud a SignPath Foundation esta en curso. Hasta que se
-> apruebe, los instaladores publicados **no estan firmados** y Windows los va a
-> tratar como de origen desconocido. Se puede verificar cual es cual con
-> `Get-AuthenticodeSignature`.
+Los instaladores publicados **no estan firmados digitalmente**: Windows y los
+antivirus los van a tratar como de origen desconocido y hay que confirmar
+"Ejecutar de todas formas" la primera vez.
 
 Para comprobar que un instalador corresponde a este codigo, comparar su SHA-256
 con el que imprime el log del build en GitHub Actions. **No** coincide con el de
